@@ -1,6 +1,7 @@
 #!/usr/bin/node
 
 import { MongoClient } from 'mongodb';
+import { pwdHash } from './utils';
 
 class DBClient {
   constructor() {
@@ -44,6 +45,41 @@ class DBClient {
       .collection('files')
       .countDocuments();
     return files;
+  }
+
+  async getUser(email) {
+    if (!this.connected) {
+      await this.client.connect();
+    }
+    const user = await this.client
+      .db(this.database)
+      .collection('users')
+      .find({ email })
+      .toArray();
+    if (!user.length) {
+      return null;
+    }
+    return user[0];
+  }
+
+  async userExist(email) {
+    const user = await this.getUser(email);
+    if (user) {
+      return true;
+    }
+    return false;
+  }
+
+  async createUser(email, password) {
+    if (!this.connected) {
+      await this.client.connect();
+    }
+    const hashedPwd = pwdHash(password);
+    const user = this.client
+      .db(this.database)
+      .collection('users')
+      .insertOne({ email, password: hashedPwd });
+    return user;
   }
 }
 
