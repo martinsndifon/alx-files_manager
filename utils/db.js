@@ -39,11 +39,11 @@ class DBClient {
     if (!this.connected) {
       await this.client.connect();
     }
-    const users = await this.client
+    const files = await this.client
       .db(this.database)
       .collection('files')
       .countDocuments();
-    return users;
+    return files;
   }
 }
 
