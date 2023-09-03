@@ -1,6 +1,7 @@
 #!/usr/bin/node
+/* eslint-disable no-underscore-dangle */
 
-import { MongoClient } from 'mongodb';
+import { MongoClient, ObjectID } from 'mongodb';
 import { pwdHash } from './utils';
 
 class DBClient {
@@ -80,6 +81,22 @@ class DBClient {
       .collection('users')
       .insertOne({ email, password: hashedPwd });
     return user;
+  }
+
+  async getUserById(id) {
+    if (!this.connected) {
+      await this.client.connect();
+    }
+    const _id = new ObjectID(id);
+    const user = await this.client
+      .db(this.database)
+      .collection('users')
+      .find({ _id })
+      .toArray();
+    if (!user.length) {
+      return null;
+    }
+    return user[0];
   }
 }
 
