@@ -115,6 +115,36 @@ class DBClient {
     return file[0];
   }
 
+  async getFilesByParentId(pipeline) {
+    if (!this.connected) {
+      await this.client.connect();
+    }
+    const files = await this.client
+      .db(this.database)
+      .collection('files')
+      .aggregate(pipeline)
+      .toArray();
+    if (!files.length) {
+      return null;
+    }
+    return files;
+  }
+
+  async getAllFiles(pipeline) {
+    if (!this.connected) {
+      await this.client.connect();
+    }
+    const files = await this.client
+      .db(this.database)
+      .collection('files')
+      .aggregate(pipeline)
+      .toArray();
+    if (!files.length) {
+      return null;
+    }
+    return files;
+  }
+
   async uploadFile(userId, name, type, isPublic, parentId, localPath = null) {
     if (!this.connected) {
       await this.client.connect();
