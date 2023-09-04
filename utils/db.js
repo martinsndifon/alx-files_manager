@@ -98,6 +98,43 @@ class DBClient {
     }
     return user[0];
   }
+
+  async getFileById(id) {
+    if (!this.connected) {
+      await this.client.connect();
+    }
+    const _id = new ObjectID(id);
+    const file = await this.client
+      .db(this.database)
+      .collection('files')
+      .find({ _id })
+      .toArray();
+    if (!file.length) {
+      return null;
+    }
+    return file[0];
+  }
+
+  async uploadFile(userId, name, type, isPublic, parentId, localPath = null) {
+    if (!this.connected) {
+      await this.client.connect();
+    }
+    const obj = {
+      userId,
+      name,
+      type,
+      isPublic,
+      parentId,
+    };
+    if (localPath) {
+      obj.localPath = localPath;
+    }
+    const file = await this.client
+      .db(this.database)
+      .collection('files')
+      .insertOne(obj);
+    return file;
+  }
 }
 
 const dbClient = new DBClient();

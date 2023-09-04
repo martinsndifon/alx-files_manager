@@ -1,4 +1,6 @@
 import sha1 from 'sha1';
+import { v4 } from 'uuid';
+import { writeFileSync, mkdirSync, existsSync } from 'fs';
 
 export const pwdHash = (pwd) => sha1(pwd);
 
@@ -32,4 +34,16 @@ export const getCredentials = (decodedToken) => {
     return null;
   }
   return { email, password };
+};
+
+export const createFile = (data) => {
+  const DEFAULT = '/tmp/files_manager';
+  const path = process.env.FOLDER_PATH ? process.env.FOLDER_PATH : DEFAULT;
+  const filename = v4();
+  const localPath = `${path}/${filename}`;
+  if (!existsSync(path)) {
+    mkdirSync(path, { recursive: true });
+  }
+  writeFileSync(localPath, data, { encoding: 'base64' });
+  return localPath;
 };
