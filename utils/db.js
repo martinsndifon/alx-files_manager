@@ -165,6 +165,28 @@ class DBClient {
       .insertOne(obj);
     return file;
   }
+
+  async publish(id) {
+    if (!this.connected) {
+      await this.client.connect();
+    }
+    const _id = new ObjectID(id);
+    await this.client
+      .db(this.database)
+      .collection('files')
+      .updateOne({ _id }, { $set: { isPublic: true } });
+  }
+
+  async unPublish(id) {
+    if (!this.connected) {
+      await this.client.connect();
+    }
+    const _id = new ObjectID(id);
+    await this.client
+      .db(this.database)
+      .collection('files')
+      .updateOne({ _id }, { $set: { isPublic: false } });
+  }
 }
 
 const dbClient = new DBClient();
