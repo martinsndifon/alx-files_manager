@@ -1,6 +1,9 @@
+/* eslint-disable consistent-return */
 /* eslint-disable no-param-reassign */
 /* eslint-disable comma-dangle */
 /* eslint-disable no-underscore-dangle */
+import { existsSync, createReadStream } from 'fs';
+import { lookup } from 'mime-types';
 import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
 import { createFile } from '../utils/utils';
@@ -220,6 +223,35 @@ class FilesController {
       parentId: file.parentId,
     };
     return res.status(200).json(obj).end();
+  }
+
+  static async getFile(req, res) {
+    const user = await FilesController.currentUser(req);
+    const { id } = req.params;
+    const file = await dbClient.getFileById(id);
+    if (!file) {
+      return res.status(404).json({ error: 'Not found' }).end();
+    }
+    if (!file.isPublic && !user) {
+      return res.status(404).json({ error: 'Not found' }).end();
+    }
+    if (user) {
+      const userId = user._id;
+      if (!file.isPublic && user && userId.toString() !== file.userId) {
+        return res.status(404).json({ error: 'Not found' }).end();
+      }
+    }
+    if (file.type === 'folder') {
+      return res.status(400).json({ error: "A folder doesn't have content" });
+    }
+    const { localPath } = file;
+    if (!existsSync(localPath)) {
+      return res.status(404).json({ error: 'Not found' });
+    }
+    const mimeType = lookup(file.name);
+    res.setHeader('Content-Type', mimeType);
+    const fileStream = createReadStream(localPath);
+    fileStream.pipe(res);
   }
 }
 
