@@ -1,6 +1,9 @@
 /* eslint-disable no-underscore-dangle */
+import Queue from 'bull';
 import dbClient from '../utils/db';
 import redisClient from '../utils/redis';
+
+const userQueue = new Queue('userQueue', 'redis://127.0.0.1:6379');
 
 class UsersController {
   static async postNew(req, res) {
@@ -25,6 +28,7 @@ class UsersController {
     }
     const user = await dbClient.createUser(email, password);
     const id = `${user.insertedId}`;
+    userQueue.add({ userId: user.insertedId });
     res.status(201).json({ id, email });
     res.end();
   }
