@@ -4,9 +4,12 @@
 /* eslint-disable no-underscore-dangle */
 import { existsSync, createReadStream } from 'fs';
 import { lookup } from 'mime-types';
+import Queue from 'bull';
 import redisClient from '../utils/redis';
 import dbClient from '../utils/db';
 import { createFile } from '../utils/utils';
+
+const fileQueue = new Queue('fileQueue', 'redis://127.0.0.1:6379');
 
 class FilesController {
   static async currentUser(req) {
@@ -55,7 +58,7 @@ class FilesController {
     }
     const isPublic = req.body.isPublic ? req.body.isPublic : false;
     if (type === 'folder') {
-      const userId = user._id;
+      const userId = user._id.toString();
       const fileObj = await dbClient.uploadFile(
         userId,
         name,
@@ -75,7 +78,7 @@ class FilesController {
       return res.status(201).json(obj).end();
     }
     const localPath = createFile(data);
-    const userId = user._id;
+    const userId = user._id.toString();
     const fileObj = await dbClient.uploadFile(
       userId,
       name,
@@ -93,6 +96,12 @@ class FilesController {
       isPublic: file.isPublic,
       parentId: file.parentId,
     };
+    // Add a new job to the queue when a new file is saved
+    if (type === 'image') {
+      const fileId = file._id;
+      const jobData = { userId, fileId };
+      await fileQueue.add(jobData);
+    }
     return res.status(201).json(obj).end();
   }
 
@@ -104,7 +113,7 @@ class FilesController {
     const userId = user._id;
     const { id } = req.params;
     const file = await dbClient.getFileById(id);
-    if (!file || userId.toString() !== file.userId) {
+    if (!file || userId.toString() !== file.userId.toString()) {
       return res.status(404).json({ error: 'Not found' }).end();
     }
     const obj = {
@@ -245,12 +254,17 @@ class FilesController {
       return res.status(400).json({ error: "A folder doesn't have content" });
     }
     const { localPath } = file;
-    if (!existsSync(localPath)) {
+    let fileName = localPath;
+    const { size } = req.params;
+    if (size) {
+      fileName = `${localPath}_${size}`;
+    }
+    if (!existsSync(fileName)) {
       return res.status(404).json({ error: 'Not found' });
     }
     const mimeType = lookup(file.name);
     res.setHeader('Content-Type', mimeType);
-    const fileStream = createReadStream(localPath);
+    const fileStream = createReadStream(fileName);
     fileStream.pipe(res);
   }
 }

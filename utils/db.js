@@ -17,6 +17,7 @@ class DBClient {
     this.client
       .connect()
       .then(() => {
+        this.db = this.client.db(`${this.database}`);
         this.connected = true;
       })
       .catch((err) => console.log(err.message));
