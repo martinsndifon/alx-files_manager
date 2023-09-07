@@ -1,4 +1,3 @@
-#!/usr/bin/node
 /* eslint-disable jest/require-hook */
 
 import express from 'express';

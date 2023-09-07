@@ -1,4 +1,3 @@
-#!/usr/bin/node
 /* eslint-disable no-underscore-dangle */
 
 import { MongoClient, ObjectID } from 'mongodb';

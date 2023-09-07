@@ -1,4 +1,3 @@
-#!/usr/bin/node
 /* eslint-disable comma-dangle */
 /* eslint-disable no-underscore-dangle */
 
